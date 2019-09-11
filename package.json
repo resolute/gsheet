@@ -1,0 +1,44 @@
+{
+    "name": "@resolute/gsheet",
+    "version": "0.0.0",
+    "description": "Simple abstractions for Google Sheets",
+    "main": "lib",
+    "types": "lib",
+    "files": [
+        "lib"
+    ],
+    "scripts": {
+        "build": "npx del-cli lib && npx tsc",
+        "release": "npx np",
+        "prepublishOnly": "npm test",
+        "test": "npm run build && npx ts-node test/index.test"
+    },
+    "repository": {
+        "type": "git",
+        "url": "git+https://github.com/resolute/gsheet.git"
+    },
+    "license": "MIT",
+    "engines": {
+        "node": ">=10.0.0"
+    },
+    "bugs": {
+        "url": "https://github.com/resolute/gsheet/issues"
+    },
+    "homepage": "https://github.com/resolute/gsheet",
+    "keywords": [
+        "google",
+        "sheets",
+        "gsheet"
+    ],
+    "dependencies": {
+        "googleapis": "^42.0.0"
+    },
+    "devDependencies": {
+        "@types/node": "*",
+        "del-cli": "*",
+        "np": "*",
+        "ts-node": "*",
+        "tslib": "*",
+        "typescript": "*"
+    }
+}
