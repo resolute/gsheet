@@ -1,6 +1,6 @@
 import { google } from 'googleapis';
 
-import { GSheetOptions, RowArray, RowObject } from './types';
+import { GSheetOptions, RowArray, RowObject, GoogleSheetsAppendResponse } from './types';
 
 import { noChange, trim, gSheetDate, gSheetDateTime } from './util';
 
@@ -106,7 +106,7 @@ const gsheet = ({
         timer.unref();
     }
 
-    const append = async (arg: RowArray | RowObject) => {
+    const append = async (arg: RowArray | RowObject): GoogleSheetsAppendResponse => {
         let row: RowArray | undefined;
         if (Array.isArray(arg)) {
             row = arg;

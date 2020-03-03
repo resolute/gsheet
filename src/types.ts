@@ -1,3 +1,5 @@
+import { sheets_v4 } from 'googleapis';
+import { GaxiosResponse } from 'gaxios';
 import { noChange, trim } from "./util";
 
 export type InputTypes = boolean | string | number | null;
@@ -24,3 +26,5 @@ export interface GSheetOptions {
     keyTransform?: typeof noChange;
     sanitize?: typeof trim;
 }
+
+export type GoogleSheetsAppendResponse = Promise<GaxiosResponse<sheets_v4.Schema$AppendValuesResponse>>;
