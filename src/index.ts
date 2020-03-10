@@ -24,6 +24,7 @@ const gsheet = ({
     headerRows = 1,
     keyTransform = noChange,
     sanitize = trim,
+    filter = () => true,
     interval,
 }: GSheetOptions) => {
 
@@ -75,18 +76,21 @@ const gsheet = ({
     }
 
     const rows = async () =>
-        (await _raw()).slice(headerRows).map(row => row.map(sanitize));
+        (await _raw())
+            .slice(headerRows)
+            .map(row => row.map(sanitize))
+            .filter(filter);
 
 
     const data = async () => {
         const keys = await _columns();
         return (await rows())
             .map((row): RowObject => row
-                .map(sanitize)
                 .reduce((obj, value, index) => {
                     obj[keys[index]] = value;
                     return obj;
-                }, {}));
+                }, {}))
+            .filter(filter);
     }
 
 

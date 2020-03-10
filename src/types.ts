@@ -25,6 +25,7 @@ export interface GSheetOptions {
     headerRows?: number;
     keyTransform?: typeof noChange;
     sanitize?: typeof trim;
+    filter?: (row: RowObject | RowArray) => boolean,
 }
 
 export type GoogleSheetsAppendResponse = Promise<GaxiosResponse<sheets_v4.Schema$AppendValuesResponse>>;
