@@ -1,6 +1,6 @@
 {
   "name": "@resolute/gsheet",
-  "version": "0.0.3",
+  "version": "0.1.0",
   "description": "Simple abstractions for Google Sheets",
   "main": "./",
   "types": "./",
