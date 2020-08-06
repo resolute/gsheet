@@ -1,24 +1,22 @@
 {
-    "compilerOptions": {
-        "declaration": true,
-        "forceConsistentCasingInFileNames": true,
-        "module": "commonjs",
-        "moduleResolution": "node",
-        "newLine": "lf",
-        "noEmitOnError": true,
-        "noFallthroughCasesInSwitch": true,
-        "noImplicitReturns": true,
-        "noUnusedLocals": true,
-        "noUnusedParameters": true,
-        "outDir": "./lib",
-        "pretty": true,
-        "skipLibCheck": true,
-        "sourceMap": true,
-        "strict": true,
-        "stripInternal": true,
-        "target": "es2017"
-    },
-    "include": [
-        "src/*.ts"
-    ]
+  "compilerOptions": {
+    "declaration": true,
+    "module": "commonjs",
+    "moduleResolution": "node",
+    "noImplicitAny": false,
+    "outDir": ".",
+    "pretty": true,
+    "resolveJsonModule": true,
+    "sourceMap": false,
+    "strict": true,
+    "stripInternal": true,
+    "target": "es2018"
+  },
+  "include": [
+    "**/*.ts"
+  ],
+  "exclude": [
+    "**/*.js",
+    "**/*.d.ts"
+  ]
 }

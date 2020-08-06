@@ -1,45 +1,53 @@
 {
-    "name": "@resolute/gsheet",
-    "version": "0.0.3",
-    "description": "Simple abstractions for Google Sheets",
-    "main": "lib",
-    "types": "lib",
-    "files": [
-        "lib"
-    ],
-    "scripts": {
-        "build": "npx del-cli lib && npx tsc",
-        "release": "npx np",
-        "prepublishOnly": "npm test",
-        "test": "npm run build && npx ts-node test/index.test"
-    },
-    "repository": {
-        "type": "git",
-        "url": "git+https://github.com/resolute/gsheet.git"
-    },
-    "license": "MIT",
-    "engines": {
-        "node": ">=10.0.0"
-    },
-    "bugs": {
-        "url": "https://github.com/resolute/gsheet/issues"
-    },
-    "homepage": "https://github.com/resolute/gsheet",
-    "keywords": [
-        "google",
-        "sheets",
-        "gsheet"
-    ],
-    "dependencies": {
-        "googleapis": "^42.0.0"
-    },
-    "devDependencies": {
-        "@types/node": "*",
-        "del-cli": "*",
-        "gaxios": "*",
-        "np": "*",
-        "ts-node": "*",
-        "tslib": "*",
-        "typescript": "*"
-    }
+  "name": "@resolute/gsheet",
+  "version": "0.0.3",
+  "description": "Simple abstractions for Google Sheets",
+  "main": "./",
+  "types": "./",
+  "files": [
+    "*.js",
+    "*.d.ts",
+    "!*.test.js",
+    "!*.test.d.ts"
+  ],
+  "scripts": {
+    "build": "npm run clean && tsc && prettier --write *.js *.d.ts && (eslint --fix *.js > /dev/null 2>&1; true)",
+    "release": "np",
+    "prepublishOnly": "npm test && npm run build",
+    "clean": "del-cli *.js *.js.map *.d.ts",
+    "test": "echo TODO"
+  },
+  "repository": {
+    "type": "git",
+    "url": "git+https://github.com/resolute/gsheet.git"
+  },
+  "license": "MIT",
+  "engines": {
+    "node": ">=10.0.0"
+  },
+  "bugs": {
+    "url": "https://github.com/resolute/gsheet/issues"
+  },
+  "homepage": "https://github.com/resolute/gsheet",
+  "keywords": [
+    "google",
+    "sheets",
+    "gsheet"
+  ],
+  "dependencies": {
+    "@resolute/promise-keeper": "*",
+    "googleapis": "*"
+  },
+  "devDependencies": {
+    "@types/node": "*",
+    "@typescript-eslint/eslint-plugin": "*",
+    "@typescript-eslint/parser": "*",
+    "del-cli": "*",
+    "eslint-config-airbnb-base": "*",
+    "eslint-plugin-import": "*",
+    "eslint": "*",
+    "np": "*",
+    "prettier": "*",
+    "typescript": "*"
+  }
 }
