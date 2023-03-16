@@ -35,17 +35,17 @@
     "gsheet"
   ],
   "dependencies": {
-    "@resolute/promise-keeper": "*",
-    "googleapis": "*"
+    "@googleapis/sheets": "^4.0.2",
+    "@resolute/std": "^0.2.0"
   },
   "devDependencies": {
     "@types/node": "*",
     "@typescript-eslint/eslint-plugin": "*",
     "@typescript-eslint/parser": "*",
     "del-cli": "*",
+    "eslint": "*",
     "eslint-config-airbnb-base": "*",
     "eslint-plugin-import": "*",
-    "eslint": "*",
     "np": "*",
     "prettier": "*",
     "typescript": "*"

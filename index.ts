@@ -1,5 +1,9 @@
-import { google, Auth } from 'googleapis';
-import keep, { PromiseKeeper } from '@resolute/promise-keeper';
+/* eslint-disable camelcase */
+/* eslint-disable no-use-before-define */
+import { sheets as _sheets, auth as _auth } from '@googleapis/sheets';
+import type { AuthPlus, sheets_v4 } from '@googleapis/sheets';
+import { keeper } from '@resolute/std/promise';
+import type { Keeper } from '@resolute/std/promise';
 
 export type InputTypes = boolean | string | number | null;
 
@@ -10,16 +14,15 @@ export type RowObject = { [key: string]: string };
 export type InputRowArray = InputTypes[];
 export type InputRowObject = { [key: string]: InputTypes };
 
-export type GoogleAuth = Auth.JWT;
+export type GoogleAuthInput =
+  | { email: string; key: string }
+  | { client_email: string; private_key: string };
 
 export interface GSheetOptions {
-  jwt: {
-    email: string;
-    key: string;
-    scopes: string[]
-  };
+  jwt?: GoogleAuthInput;
   spreadsheetId: string;
   range: string;
+  http2?: boolean;
 
   preload?: boolean;
   interval?: number;
@@ -27,7 +30,7 @@ export interface GSheetOptions {
   headerRows?: number;
   keyTransform?: Gsheet['keyTransform'];
   sanitize?: Gsheet['sanitize'];
-  filter?: Gsheet['filter'],
+  filter?: Gsheet['filter'];
 }
 
 export const gSheetDate = (date = new Date()) =>
@@ -55,29 +58,42 @@ export const noFilter = () => true;
 // will be skipped. To set a cell to an empty value, set the string value to an
 // empty string.
 
-const sheets = google.sheets('v4');
-
 export class Gsheet {
-  private auth: GoogleAuth;
+  private client: Promise<sheets_v4.Sheets>;
+  private auth: Awaited<ReturnType<AuthPlus['getClient']>> | ReturnType<AuthPlus['getClient']>;
   private spreadsheetId: string;
   private range: string;
   private headerRows: number;
   private keyTransform: (arg: string) => string;
   private sanitize: <T extends InputTypes>(arg: T) => string | T;
   private filter: (arg: RowObject | RowArray) => boolean;
-  private keptSheet: PromiseKeeper<Gsheet['getSheet']>;
-  private keptColumns: PromiseKeeper<Gsheet['getColumns']>;
+  private keptSheet: Keeper<Awaited<ReturnType<Gsheet['getSheet']>>>;
+  private keptColumns: Keeper<Awaited<ReturnType<Gsheet['getColumns']>>>;
 
   constructor(options: GSheetOptions) {
-    this.auth = new google.auth.JWT(options.jwt);
+    this.auth = (() => {
+      const googleAuth = new _auth.GoogleAuth({
+        scopes: ['https://www.googleapis.com/auth/spreadsheets'],
+      });
+      if (options.jwt) {
+        const client_email =
+          'client_email' in options.jwt ? options.jwt.client_email : options.jwt.email;
+        const private_key =
+          'private_key' in options.jwt ? options.jwt.private_key : options.jwt.key;
+        return googleAuth.fromJSON({ client_email, private_key });
+      }
+      return googleAuth.getClient();
+    })();
+    this.client = Promise.resolve(this.auth).then((auth) =>
+      _sheets({ version: 'v4', auth, http2: options.http2 ?? false }));
     this.spreadsheetId = options.spreadsheetId;
     this.range = options.range;
     this.headerRows = options?.headerRows ?? 1;
     this.keyTransform = options?.keyTransform ?? noChange;
     this.sanitize = options?.sanitize ?? trim;
     this.filter = options?.filter ?? noFilter;
-    this.keptSheet = keep(this.getSheet.bind(this));
-    this.keptColumns = keep(this.getColumns.bind(this));
+    this.keptSheet = keeper(this.getSheet.bind(this));
+    this.keptColumns = keeper(this.getColumns.bind(this));
     if (options.preload) {
       this.refresh();
     }
@@ -87,8 +103,9 @@ export class Gsheet {
   }
 
   private async getSheet(range = this.range) {
-    const response = await sheets.spreadsheets.values.get({
-      auth: this.auth,
+    // const auth = new google.auth.GoogleAuth();
+    const client = await this.client;
+    const response = await client.spreadsheets.values.get({
       spreadsheetId: this.spreadsheetId,
       range,
     });
@@ -104,7 +121,7 @@ export class Gsheet {
 
   private getColumnsFromSheetCache() {
     try {
-      return this.keptSheet.getSettledOrThrowSync();
+      return this.keptSheet.stale();
     } catch {
       return this.getHeaderRowsOnly();
     }
@@ -115,17 +132,15 @@ export class Gsheet {
     if (!columns || !columns.length) {
       throw new Error(`Unable to turn rows into objects. Row at ${this.headerRows} is empty.`);
     }
-    return columns
-      .map(this.sanitize)
-      .map(this.keyTransform);
+    return columns.map(this.sanitize).map(this.keyTransform);
   }
 
   public async columns() {
-    return this.keptColumns.getSettled();
+    return this.keptColumns.get();
   }
 
   public async rows() {
-    const rows = await this.keptSheet.getSettled();
+    const rows = await this.keptSheet.get();
     return rows
       .slice(this.headerRows)
       .map((row) => row.map(this.sanitize))
@@ -139,14 +154,16 @@ export class Gsheet {
     const rows = await this.rows();
     const keys = await this.columns();
     return rows
-      .map((row): RowObject => row
-        .reduce((obj, value, index) => {
-          if (keys[index]) {
-            // eslint-disable-next-line no-param-reassign
-            obj[keys[index]] = value;
-          }
-          return obj;
-        }, {}))
+      .map(
+        (row): RowObject =>
+          row.reduce((obj, value, index) => {
+            if (keys[index]) {
+              // eslint-disable-next-line no-param-reassign
+              obj[keys[index]] = value;
+            }
+            return obj;
+          }, {} as RowObject),
+      )
       .filter(this.filter);
   }
 
@@ -158,8 +175,7 @@ export class Gsheet {
     const entries = Object.entries(arg).map(([key, val]) => [key.toLowerCase(), val]);
     const columns = await this.columns();
     return columns
-      .map((key) => (entries
-        .find(([entryKey]) => entryKey === key.toLowerCase()) || [])[1])
+      .map((key) => (entries.find(([entryKey]) => entryKey === key.toLowerCase()) || [])[1])
       .map(this.sanitize);
   }
 
@@ -168,15 +184,16 @@ export class Gsheet {
     if (!row) {
       throw new Error(`Unable to add ${arg}.`);
     }
-    const response = await sheets.spreadsheets.values.append({
-      auth: this.auth,
+    const client = await this.client;
+    const response = await client.spreadsheets.values.append({
       spreadsheetId: this.spreadsheetId,
       range: this.range,
       insertDataOption: 'INSERT_ROWS',
       valueInputOption: 'USER_ENTERED',
       requestBody: { range: this.range, values: [row] },
     });
-    this.keptSheet.purge();
+    // TODO: should we do this? Or allow other readers to still get stale content?
+    this.keptSheet.fresh();
     if (!(response?.data?.updates?.updatedRows! > 0)) {
       throw new Error('Failed to save your information. Please try again.');
     }
@@ -184,15 +201,15 @@ export class Gsheet {
   }
 
   public refresh() {
-    this.keptSheet.refresh();
+    this.keptSheet.fresh();
   }
 
   public keepFresh(interval: number) {
-    this.keptSheet.keepFresh(interval);
+    this.keptSheet.start(interval);
   }
 }
 
-export default (options: GSheetOptions) => {
+export const gsheet = (options: GSheetOptions) => {
   const instance = new Gsheet(options);
   instance.rows = instance.rows.bind(instance);
   instance.data = instance.data.bind(instance);
@@ -201,3 +218,5 @@ export default (options: GSheetOptions) => {
   instance.refresh = instance.refresh.bind(instance);
   return instance;
 };
+
+export default gsheet;
